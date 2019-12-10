@@ -71,22 +71,20 @@ export class FileListComponent extends React.Component<{
             }
 
             fileEntries.push(sortedFiles.map((file: CARTA.FileInfo) => {
-                return file.HDUList.map(hdu => {
-                    let className = "file-table-entry";
-                    if (file === this.props.selectedFile && hdu === this.props.selectedHDU) {
-                        className += " file-table-entry-selected";
-                    }
+                let className = "file-table-entry";
+                if (file === this.props.selectedFile) {
+                    className += " file-table-entry-selected";
+                }
 
-                    const typeInfo = this.getFileTypeDisplay(file.type);
-                    return (
-                        <tr key={`${file.name}:${hdu}`} onDoubleClick={() => this.props.onFileDoubleClicked(file, hdu)} onClick={() => this.props.onFileClicked(file, hdu)} className={className}>
-                            <td><Icon icon="document"/></td>
-                            <td>{file.HDUList.length > 1 ? `${file.name}: HDU ${hdu}` : file.name}</td>
-                            <td><Tooltip content={typeInfo.description}>{typeInfo.type}</Tooltip></td>
-                            <td>{this.getFileSizeDisplay(file.size as number)}</td>
-                        </tr>
-                    );
-                });
+                const typeInfo = this.getFileTypeDisplay(file.type);
+                return (
+                    <tr key={`${file.name}`} onDoubleClick={() => this.props.onFileDoubleClicked(file, "")} onClick={() => this.props.onFileClicked(file, "")} className={className}>
+                        <td><Icon icon="document"/></td>
+                        <td>{file.name}</td>
+                         <td><Tooltip content={typeInfo.description}>{typeInfo.type}</Tooltip></td>
+                        <td>{this.getFileSizeDisplay(file.size as number)}</td>
+                    </tr>
+                );
             }));
         }
 
