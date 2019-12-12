@@ -1,12 +1,15 @@
 import * as React from "react";
-import {Icon, NonIdealState, Spinner, HTMLTable, Tooltip} from "@blueprintjs/core";
+import {observer} from "mobx-react";
+import {Icon, NonIdealState, Spinner, HTMLTable, ITreeNode, Tooltip, Tree} from "@blueprintjs/core";
 import {CARTA} from "carta-protobuf";
 import {toFixed} from "utilities";
 import "./FileListComponent.css";
 
+@observer
 export class FileListComponent extends React.Component<{
     darkTheme: boolean,
     files: CARTA.IFileListResponse,
+    hduLists: ITreeNode[],
     selectedFile: CARTA.IFileInfo,
     selectedHDU: string,
     onFileClicked: (file: CARTA.FileInfo, hdu: string) => void,
@@ -31,6 +34,8 @@ export class FileListComponent extends React.Component<{
     public render() {
         const fileEntries = [];
         const fileList = this.props.files;
+        const hduFileNames = this.props.hduLists.map(hduList => hduList.label);
+
         if (fileList) {
             let sortedDirectories = [];
             if (fileList.subdirectories && fileList.subdirectories.length) {
@@ -45,8 +50,7 @@ export class FileListComponent extends React.Component<{
             fileEntries.push(sortedDirectories.map(dir => {
                 return (
                     <tr key={dir} onClick={() => this.props.onFolderClicked(dir, false)} className="file-table-entry">
-                        <td><Icon icon="folder-close"/></td>
-                        <td>{dir}</td>
+                        <td><Icon icon="folder-close"/> {dir}</td>
                         <td/>
                         <td/>
                     </tr>
@@ -79,9 +83,8 @@ export class FileListComponent extends React.Component<{
                 const typeInfo = this.getFileTypeDisplay(file.type);
                 return (
                     <tr key={`${file.name}`} onDoubleClick={() => this.props.onFileDoubleClicked(file, "")} onClick={() => this.props.onFileClicked(file, "")} className={className}>
-                        <td><Icon icon="document"/></td>
-                        <td>{file.name}</td>
-                         <td><Tooltip content={typeInfo.description}>{typeInfo.type}</Tooltip></td>
+                        <td>{hduFileNames.includes(file.name) ? this.genTreeNode(file.name) : <span><Icon icon="document"/> {file.name}</span>}</td>
+                        <td><Tooltip content={typeInfo.description}>{typeInfo.type}</Tooltip></td>
                         <td>{this.getFileSizeDisplay(file.size as number)}</td>
                     </tr>
                 );
@@ -94,7 +97,6 @@ export class FileListComponent extends React.Component<{
                     <HTMLTable small={true} className="file-table">
                         <thead>
                         <tr>
-                            <th id="file-header-icon" className={this.props.darkTheme ? "dark-theme" : ""}/>
                             <th onClick={() => this.setSortColumn("name")} id="file-header-name" className={this.props.darkTheme ? "dark-theme" : ""}>
                                 File Name
                                 {this.state.sortColumn === "name" &&
@@ -149,4 +151,39 @@ export class FileListComponent extends React.Component<{
     private getFileTypeDisplay(type: CARTA.FileType) {
         return FileListComponent.FileTypeMap.get(type) || {type: "Unknown", description: "An unknown file format"};
     }
+
+    private genTreeNode = (fileName: string) => {
+        const hduLists = this.props.hduLists;
+        if (!hduLists) {
+            return null;
+        }
+
+        const found: ITreeNode = hduLists.find(hduList => hduList.label === fileName);
+        if (!found) {
+            return null;
+        }
+
+        return (
+            <Tree
+                onNodeClick={this.handleNodeClick}
+                onNodeCollapse={this.handleNodeCollapse}
+                onNodeExpand={this.handleNodeExpand}
+                contents={[found]}
+            />
+        );
+    };
+
+    private handleNodeClick = (nodeData: ITreeNode, _nodePath: number[], e: React.MouseEvent<HTMLElement>) => {
+        console.log(nodeData.label + " click");
+    };
+
+    private handleNodeCollapse = (nodeData: ITreeNode) => {
+        console.log(nodeData.label + " Collapse");
+        nodeData.isExpanded = false;
+    };
+
+    private handleNodeExpand = (nodeData: ITreeNode) => {
+        console.log(nodeData.label + " Expand");
+        nodeData.isExpanded = true;
+    };
 }

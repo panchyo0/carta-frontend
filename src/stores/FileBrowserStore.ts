@@ -1,4 +1,5 @@
 import {action, computed, observable} from "mobx";
+import {ITreeNode} from "@blueprintjs/core";
 import {TabId} from "@blueprintjs/core";
 import {CARTA} from "carta-protobuf";
 import {BackendService} from "services";
@@ -35,6 +36,7 @@ export class FileBrowserStore {
     @observable exportFilename: string;
     @observable exportCoordinateType: CARTA.CoordinateType;
     @observable exportFileType: RegionFileType;
+    @observable hduLists: ITreeNode[];
 
     @action showFileBrowser = (mode: BrowserMode, append = false) => {
         this.appendingFrame = append;
@@ -56,6 +58,25 @@ export class FileBrowserStore {
         this.selectedHDU = null;
         this.fileInfoExtended = null;
         this.regionFileInfo = null;
+        this.hduLists.length = 0;
+
+        // to be deleted
+        this.hduLists.push({
+            id: 0,
+            isExpanded: false,
+            icon: "document",
+            label: "0test.fits",
+            childNodes: [
+                {
+                    id: 0,
+                    label: "hdu 0"
+                },
+                {
+                    id: 1,
+                    label: "hdu 1",
+                }
+            ]
+        });
 
         if (this.browserMode === BrowserMode.File) {
             this.backendService.getFileList(directory).subscribe(res => {
@@ -197,5 +218,6 @@ export class FileBrowserStore {
         this.backendService = backendService;
         this.exportCoordinateType = CARTA.CoordinateType.WORLD;
         this.exportFileType = CARTA.FileType.CRTF;
+        this.hduLists = [];
     }
 }

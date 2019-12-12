@@ -258,6 +258,7 @@ export class FileBrowserDialogComponent extends React.Component<{ appStore: AppS
                             <FileListComponent
                                 darkTheme={this.props.appStore.darkTheme}
                                 files={fileBrowserStore.fileList}
+                                hduLists={fileBrowserStore.hduLists}
                                 selectedFile={fileBrowserStore.selectedFile}
                                 selectedHDU={fileBrowserStore.selectedHDU}
                                 onFileClicked={fileBrowserStore.selectFile}
