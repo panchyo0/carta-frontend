@@ -85,7 +85,7 @@ export class FileListComponent extends React.Component<{
                     <tr key={`${file.name}`} onDoubleClick={() => this.props.onFileDoubleClicked(file, "")} onClick={() => this.props.onFileClicked(file, "")} className={className}>
                         <td>{hduFileNames.includes(file.name) ? this.genTreeNode(file.name) : <span><Icon icon="document"/> {file.name}</span>}</td>
                         <td><Tooltip content={typeInfo.description}>{typeInfo.type}</Tooltip></td>
-                        <td>{this.getFileSizeDisplay(file.size as number)}</td>
+                        <td style={{whiteSpace: "nowrap"}}>{this.getFileSizeDisplay(file.size as number)}</td>
                     </tr>
                 );
             }));
@@ -137,7 +137,9 @@ export class FileListComponent extends React.Component<{
     }
 
     private getFileSizeDisplay(sizeInBytes: number): string {
-        if (sizeInBytes >= 1e9) {
+        if (sizeInBytes >= 1e12) {
+            return `${toFixed(sizeInBytes / 1e12, 2)} TB`;
+        } else if (sizeInBytes >= 1e9) {
             return `${toFixed(sizeInBytes / 1e9, 1)} GB`;
         } else if (sizeInBytes >= 1e6) {
             return `${toFixed(sizeInBytes / 1e6, 1)} MB`;
