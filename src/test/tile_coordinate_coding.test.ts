@@ -1,26 +1,28 @@
 import {TileCoordinate} from "../models";
 
 test("returns -1 for invalid coordinates", () => {
-    expect(TileCoordinate.Encode(-1, 0, 3)).toBe(-1);
-    expect(TileCoordinate.Encode(0, -1, 3)).toBe(-1);
-    expect(TileCoordinate.Encode(0, 0, -1)).toBe(-1);
+    expect(TileCoordinate.Encode(-1, 0, 3, 0)).toBe(-1);
+    expect(TileCoordinate.Encode(0, -1, 3, 0)).toBe(-1);
+    expect(TileCoordinate.Encode(0, 0, -1, 0)).toBe(-1);
+    expect(TileCoordinate.Encode(0, 0, 0, -1)).toBe(-1);
 });
 
 test("returns -1 for out of range coordinates", () => {
-    expect(TileCoordinate.Encode(1, 0, 0)).toBe(-1);
-    expect(TileCoordinate.Encode(0, 1, 0)).toBe(-1);
-    expect(TileCoordinate.Encode(4, 0, 2)).toBe(-1);
-    expect(TileCoordinate.Encode(0, 4, 2)).toBe(-1);
+    expect(TileCoordinate.Encode(1, 0, 0, 0)).toBe(-1);
+    expect(TileCoordinate.Encode(0, 1, 0, 0)).toBe(-1);
+    expect(TileCoordinate.Encode(4, 0, 2, 0)).toBe(-1);
+    expect(TileCoordinate.Encode(0, 4, 2, 0)).toBe(-1);
 });
 
 test("returns identical round trip coordinates", () => {
     for (let i = 0; i < 10000; i++) {
+        const fileId = Math.floor(Math.random() * 100);
         const layer = Math.floor(Math.random() * 12);
         const layerWidth = 2 ** layer;
         const x = Math.floor(Math.random() * layerWidth);
         const y = Math.floor(Math.random() * layerWidth);
 
-        const coordinate = new TileCoordinate(x, y, layer);
+        const coordinate = new TileCoordinate(x, y, layer, fileId);
         const encodedVal = coordinate.encode();
         const roundTripCoordinate = TileCoordinate.Decode(encodedVal);
 
@@ -28,28 +30,30 @@ test("returns identical round trip coordinates", () => {
     }
 });
 
-test("encodes 10000 coordinates in less than 5 ms", () => {
+test("encodes 1M coordinates in less than 200 ms", () => {
     const layer = 12;
+    const fileId = 0;
     let encodedVal = 0;
     const tStart = performance.now();
     for (let i = 0; i < 1000; i++) {
         for (let j = 0; j < 1000; j++) {
-            encodedVal += TileCoordinate.Encode(i, j, layer);
+            encodedVal += TileCoordinate.Encode(i, j, layer, fileId);
         }
     }
     const tEnd = performance.now();
     const dt = tEnd - tStart;
     expect(encodedVal).toBe(203373043500000);
-    expect(dt).toBeLessThan(20);
+    expect(dt).toBeLessThan(200);
 });
 
-test("decodes 1M coordinates in less than 20 ms", () => {
+test("decodes 1M coordinates in less than 200 ms", () => {
     const layer = 12;
     const layerWidth = 2 ** layer;
+    const fileId = 0;
     let counter = 0;
     const tStart = performance.now();
 
-    let encVal = TileCoordinate.Encode(0, 0, layer);
+    let encVal = TileCoordinate.Encode(0, 0, layer, fileId);
     for (let i = 0; i < 1000; i++) {
         for (let j = 0; j < 1000; j++) {
             counter += TileCoordinate.Decode(encVal).x;
@@ -60,5 +64,5 @@ test("decodes 1M coordinates in less than 20 ms", () => {
     const tEnd = performance.now();
     const dt = tEnd - tStart;
     expect(counter).toBe(2046486240);
-    expect(dt).toBeLessThan(20);
+    expect(dt).toBeLessThan(200);
 });

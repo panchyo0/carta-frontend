@@ -533,7 +533,7 @@ export class AppStore {
                 mip: reqView.mip
             };
             const imageSize: Point2D = {x: frame.frameInfo.fileInfoExtended.width, y: frame.frameInfo.fileInfoExtended.height};
-            const tiles = GetRequiredTiles(croppedReq, imageSize, {x: 256, y: 256});
+            const tiles = GetRequiredTiles(croppedReq, imageSize, {x: 256, y: 256}, frame.frameInfo.fileId);
             const midPointImageCoords = {x: (reqView.xMax + reqView.xMin) / 2.0, y: (reqView.yMin + reqView.yMax) / 2.0};
             // TODO: dynamic tile size
             const tileSizeFullRes = reqView.mip * 256;
@@ -567,7 +567,7 @@ export class AppStore {
                 };
 
                 const imageSize: Point2D = {x: this.activeFrame.frameInfo.fileInfoExtended.width, y: this.activeFrame.frameInfo.fileInfoExtended.height};
-                const tiles = GetRequiredTiles(croppedReq, imageSize, {x: 256, y: 256});
+                const tiles = GetRequiredTiles(croppedReq, imageSize, {x: 256, y: 256}, this.activeFrame.frameInfo.fileId);
                 const midPointImageCoords = {x: (reqView.xMax + reqView.xMin) / 2.0, y: (reqView.yMin + reqView.yMax) / 2.0};
                 // TODO: dynamic tile size
                 const tileSizeFullRes = reqView.mip * 256;

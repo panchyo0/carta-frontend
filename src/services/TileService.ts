@@ -21,12 +21,9 @@ export interface CompressedTile {
 export const TEXTURE_SIZE = 4096;
 export const TILE_SIZE = 256;
 export const MAX_TEXTURES = 8;
-export const NUM_PERSISTENT_LAYERS = 4;
-export const NUM_PERSISTENT_TILES = 85;
 
 export class TileService {
     private readonly backendService: BackendService;
-    private readonly persistentTiles: Map<number, RasterTile>;
     private readonly cachedTiles: LRUCache<number, RasterTile>;
     private readonly lruCapacitySystem: number;
     private readonly cacheMapCompressedTiles: Map<number, LRUCache<number, CompressedTile>>;
@@ -35,8 +32,8 @@ export class TileService {
     private readonly channelMap: Map<number, { channel: number, stokes: number }>;
     private currentFileId: number;
     private readonly tileStream: Subject<number>;
+    private readonly textureArray: Array<WebGLTexture>;
     private glContext: WebGLRenderingContext;
-    private textureArray: Array<WebGLTexture>;
     private textureCoordinateQueue: Array<number>;
     private readonly workers: Worker[];
     private compressionRequestCounter: number;
@@ -58,17 +55,15 @@ export class TileService {
         this.channelMap = new Map<number, { channel: number, stokes: number }>();
 
         // L1 cache: on GPU
-        const minRequiredTiles = lruCapacityGPU + NUM_PERSISTENT_TILES;
         const numTilesPerTexture = (TEXTURE_SIZE * TEXTURE_SIZE) / (TILE_SIZE * TILE_SIZE);
-        const numTextures = Math.min(Math.ceil(minRequiredTiles / numTilesPerTexture), MAX_TEXTURES);
-        lruCapacityGPU = numTextures * numTilesPerTexture - NUM_PERSISTENT_TILES;
+        const numTextures = Math.min(Math.ceil(lruCapacityGPU / numTilesPerTexture), MAX_TEXTURES);
+        lruCapacityGPU = numTextures * numTilesPerTexture;
         console.log(`lruGPU capacity rounded to : ${lruCapacityGPU}`);
 
         this.textureArray = new Array<WebGLTexture>(numTextures);
         this.resetCoordinateQueue();
 
         this.cachedTiles = new LRUCache<number, RasterTile>(Int32Array, null, lruCapacityGPU);
-        this.persistentTiles = new Map<number, RasterTile>();
         this.pendingRequests = new Map<number, boolean>();
 
         // L2 cache: compressed tiles on system memory
@@ -123,10 +118,6 @@ export class TileService {
     }
 
     getTile(tileCoordinateEncoded: number, fileId: number, channel: number, stokes: number, peek: boolean = false) {
-        const layer = TileCoordinate.GetLayer(tileCoordinateEncoded);
-        if (layer < NUM_PERSISTENT_LAYERS) {
-            return this.persistentTiles.get(tileCoordinateEncoded);
-        }
         if (peek) {
             return this.cachedTiles.peek(tileCoordinateEncoded);
         }
@@ -164,8 +155,7 @@ export class TileService {
                 continue;
             }
             const encodedCoordinate = tile.encode();
-            const tileCached = !(channelsChanged || fileChanged) && ((tile.layer < NUM_PERSISTENT_LAYERS && this.persistentTiles.has(encodedCoordinate))
-                || (tile.layer >= NUM_PERSISTENT_LAYERS && this.cachedTiles.has(encodedCoordinate)));
+            const tileCached = !(channelsChanged || fileChanged) && (this.cachedTiles.has(encodedCoordinate));
             if (!tileCached && !this.pendingRequests.has(encodedCoordinate)) {
                 const compressedTile = !channelsChanged && this.getCompressedCache(fileId).get(encodedCoordinate);
                 if (compressedTile && !this.pendingDecompressions.has(encodedCoordinate)) {
@@ -181,14 +171,14 @@ export class TileService {
         }
 
         if (newRequests.length) {
-            // sort by distance to midpoint and encode
+            // sort by distance to midpoint and encode (remove fileId from tile coordinate
             const sortedRequests = newRequests.sort((a, b) => {
                 const aX = focusPoint.x - a.x;
                 const aY = focusPoint.y - a.y;
                 const bX = focusPoint.x - b.x;
                 const bY = focusPoint.y - b.y;
                 return (aX * aX + aY * aY) - (bX * bX + bY * bY);
-            }).map(tile => tile.encode());
+            }).map(tile => tile.encode() % (2 ** 32));
             if (channelsChanged) {
                 this.backendService.setChannels(fileId, channel, stokes, {fileId, compressionQuality, compressionType: CARTA.CompressionType.ZFP, tiles: sortedRequests});
             } else {
@@ -200,8 +190,6 @@ export class TileService {
     clearGPUCache() {
         this.cachedTiles.forEach(this.clearTile);
         this.cachedTiles.clear();
-        this.persistentTiles.forEach(this.clearTile);
-        this.persistentTiles.clear();
     }
 
     clearCompressedCache(fileId: number) {
@@ -291,7 +279,7 @@ export class TileService {
         }
 
         for (let tile of tileMessage.tiles) {
-            const encodedCoordinate = TileCoordinate.Encode(tile.x, tile.y, tile.layer);
+            const encodedCoordinate = TileCoordinate.Encode(tile.x, tile.y, tile.layer, tileMessage.fileId);
             // Remove from the requested tile map
             if (this.pendingRequests.has(encodedCoordinate)) {
                 this.pendingRequests.delete(encodedCoordinate);
@@ -355,13 +343,9 @@ export class TileService {
 
                 for (const tilePair of this.receivedSynchronisedTiles) {
                     tilePair.tile.textureCoordinate = this.textureCoordinateQueue.pop();
-                    if (layer < NUM_PERSISTENT_LAYERS) {
-                        this.persistentTiles.set(tilePair.coordinate, tilePair.tile);
-                    } else {
-                        const oldValue = this.cachedTiles.setpop(tilePair.coordinate, tilePair.tile);
-                        if (oldValue) {
-                            this.clearTile(oldValue.value, oldValue.key);
-                        }
+                    const oldValue = this.cachedTiles.setpop(tilePair.coordinate, tilePair.tile);
+                    if (oldValue) {
+                        this.clearTile(oldValue.value, oldValue.key);
                     }
                 }
                 this.receivedSynchronisedTiles = [];
@@ -376,13 +360,9 @@ export class TileService {
                 textureCoordinate,
                 data: decompressedData,
             };
-            if (layer < NUM_PERSISTENT_LAYERS) {
-                this.persistentTiles.set(encodedCoordinate, rasterTile);
-            } else {
-                const oldValue = this.cachedTiles.setpop(encodedCoordinate, rasterTile);
-                if (oldValue) {
-                    this.clearTile(oldValue.value, oldValue.key);
-                }
+            const oldValue = this.cachedTiles.setpop(encodedCoordinate, rasterTile);
+            if (oldValue) {
+                this.clearTile(oldValue.value, oldValue.key);
             }
             this.pendingDecompressions.delete(encodedCoordinate);
             this.tileStream.next(1);

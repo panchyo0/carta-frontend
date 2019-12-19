@@ -260,7 +260,7 @@ export class RasterViewComponent extends React.Component<RasterViewComponentProp
         };
 
         this.gl.activeTexture(WebGLRenderingContext.TEXTURE0);
-        const requiredTiles = GetRequiredTiles(boundedView, imageSize, {x: TILE_SIZE, y: TILE_SIZE});
+        const requiredTiles = GetRequiredTiles(boundedView, imageSize, {x: TILE_SIZE, y: TILE_SIZE}, frame.frameInfo.fileId);
         // Special case when zoomed out
         if (requiredTiles.length === 1 && requiredTiles[0].layer === 0) {
             const mip = LayerToMip(0, imageSize, {x: TILE_SIZE, y: TILE_SIZE});
@@ -317,6 +317,7 @@ export class RasterViewComponent extends React.Component<RasterViewComponentProp
                         layer: tile.layer - 1,
                         x: Math.floor(tile.x / 2.0),
                         y: Math.floor(tile.y / 2.0),
+                        fileId: frame.frameInfo.fileId
                     };
                     placeholderTileMap.set(TileCoordinate.EncodeCoordinate(lowResTile), true);
                 }

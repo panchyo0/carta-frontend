@@ -34,7 +34,7 @@ export function LayerToMip(layer: number, imageSize: Point2D, tileSize: Point2D)
     return Math.pow(2.0, totalLayers - layer);
 }
 
-export function GetRequiredTiles(frameView: FrameView, imageSize: Point2D, tileSize: Point2D): TileCoordinate[] {
+export function GetRequiredTiles(frameView: FrameView, imageSize: Point2D, tileSize: Point2D, fileId: number): TileCoordinate[] {
     // Validate FrameView object
     if (!frameView || !isFinite(frameView.xMin) || !isFinite(frameView.xMax) || !isFinite(frameView.yMin) || !isFinite(frameView.yMax) || !isFinite(frameView.mip)) {
         return [];
@@ -60,9 +60,13 @@ export function GetRequiredTiles(frameView: FrameView, imageSize: Point2D, tileS
         return [];
     }
 
+    if (fileId < 0) {
+        return [];
+    }
+
     const layer = MipToLayer(frameView.mip, imageSize, tileSize);
     if (layer < 0) {
-        return [new TileCoordinate(0, 0, 0)];
+        return [];
     }
 
     const boundedFrameView: FrameView = {
@@ -88,7 +92,7 @@ export function GetRequiredTiles(frameView: FrameView, imageSize: Point2D, tileS
     const tileSet: TileCoordinate[] = new Array<TileCoordinate>(numTilesX * numTilesY);
     for (let x = xStart, i = 0; x < xEnd; x++) {
         for (let y = yStart; y < yEnd; y++, i++) {
-            tileSet[i] = new TileCoordinate(x, y, layer);
+            tileSet[i] = new TileCoordinate(x, y, layer, fileId);
         }
     }
     return tileSet;
