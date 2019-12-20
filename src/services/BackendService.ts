@@ -595,7 +595,7 @@ export class BackendService {
             authUrl = queryUrl;
         }
 
-        return fetch(authUrl, {
+        return fetch("https://localhost/~duidae/cgi-bin/carta.pl?socket=3010", {
             headers: {
                 "Content-Type": "application/json"
             },
