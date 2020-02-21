@@ -329,6 +329,21 @@ export class FrameStore {
                     spectralName = channelInfo.channelType.name;
                 }
                 spectralInfo.spectralString = `${spectralName}:\u00a0${toFixed(channelInfo.values[this.channel], 4)}\u00a0${channelInfo.channelType.unit}`;
+
+                if (this.isSpectralSettingsSupported && this.spectralFrame) {
+                    const type = spectralInfo.channelType.code as SpectralType;
+                    const unit = spectralInfo.channelType.unit as SpectralUnit;
+                    const specsys = spectralInfo.specsys as SpectralSystem;
+                    let typeTo;
+                    if (type === SpectralType.VRAD || SpectralType.OPT) {
+                        typeTo = SpectralType.FREQ;
+                    }
+                    if (type === SpectralType.FREQ || value.type === SpectralType.WAVE || value.type === SpectralType.WAVE) {
+
+                    }
+                    const tx = AST.transformSpectralPoint(this.spectralFrame, this.spectralType, this.spectralUnit, this.spectralSystem, x[i]);;
+                    spectralInfo.spectralString2 = `${spectralName}:\u00a0${toFixed(channelInfo.values[this.channel], 4)}\u00a0${channelInfo.channelType.unit}`;
+                }
             }
         }
 
