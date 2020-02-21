@@ -339,16 +339,6 @@ export class FrameStore {
                     spectralName = channelInfo.channelType.name;
                 }
                 spectralInfo.spectralString = `${spectralName}:\u00a0${toFixed(channelInfo.values[this.channel], 4)}\u00a0${channelInfo.channelType.unit}`;
-
-                const refFreq = this.referenceFrequency;
-                // Add velocity conversion
-                if (channelInfo.channelType.code === "FREQ" && isFinite(refFreq)) {
-                    const freqVal = channelInfo.rawValues[this.channel];
-                    spectralInfo.velocityString = velocityStringFromFrequency(freqVal, refFreq);
-                } else if (channelInfo.channelType.code === "VRAD") {
-                    const velocityVal = channelInfo.rawValues[this.channel];
-                    spectralInfo.freqString = frequencyStringFromVelocity(velocityVal, refFreq);
-                }
             }
         }
 

@@ -49,12 +49,6 @@ export class CursorOverlayComponent extends React.Component<CursorOverlayProps> 
         }
         if (this.props.showSpectral && this.props.spectralInfo.spectralString) {
             infoStrings.push(this.props.spectralInfo.spectralString);
-            if (this.props.spectralInfo.freqString) {
-                infoStrings.push(this.props.spectralInfo.freqString);
-            }
-            if (this.props.spectralInfo.velocityString) {
-                infoStrings.push(this.props.spectralInfo.velocityString);
-            }
         }
 
         const height = (this.props.height !== undefined && this.props.height >= 0) ? this.props.height : 20;
