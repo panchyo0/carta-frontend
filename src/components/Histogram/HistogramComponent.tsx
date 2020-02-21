@@ -49,7 +49,7 @@ export class HistogramComponent extends React.Component<WidgetProps> {
         const appStore = this.props.appStore;
 
         if (appStore.activeFrame) {
-            let fileId = appStore.activeFrame.frameInfo.fileId;
+            let fileId = this.widgetStore.effectiveFrame.frameInfo.fileId;
             let regionId = this.widgetStore.effectiveRegionId;
 
             // // Image histograms handled slightly differently
@@ -111,7 +111,7 @@ export class HistogramComponent extends React.Component<WidgetProps> {
         let headerString = [];
 
         // region info
-        const frame = this.props.appStore.activeFrame;
+        const frame = this.widgetStore.effectiveFrame;
         if (frame && frame.frameInfo && frame.regionSet) {
             const regionId = this.widgetStore.effectiveRegionId;
             const region = frame.regionSet.regions.find(r => r.regionId === regionId);

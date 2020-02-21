@@ -14,11 +14,13 @@ export enum RegionsType {
 }
 export class RegionWidgetStore {
     private readonly appStore: AppStore;
+    @observable fileId: number;
     @observable regionIdMap: Map<number, number>;
     @observable type: RegionsType;
 
     constructor(appStore: AppStore, type: RegionsType) {
         this.appStore = appStore;
+        this.fileId = -3;
         this.type = type;
         this.regionIdMap = new Map<number, number>();
     }
@@ -34,6 +36,17 @@ export class RegionWidgetStore {
     @action setRegionId = (fileId: number, regionId: number) => {
         this.regionIdMap.set(fileId, regionId);
     };
+
+    @action setFileId = (fileId: number) => {
+        this.fileId = fileId;
+    }
+
+    @computed get effectiveFrame() {
+        if (this.appStore.frames && this.appStore.frames.length > 0) {
+            return this.fileId === -3 ? this.appStore.activeFrame : this.appStore.getFrame(this.fileId); 
+        }
+        return null;
+    }
 
     @computed get effectiveRegionId() {
         if (this.appStore.activeFrame) {
