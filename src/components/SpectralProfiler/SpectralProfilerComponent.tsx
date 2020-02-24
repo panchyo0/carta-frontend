@@ -46,9 +46,10 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
     }
 
     @computed get profileStore(): SpectralProfileStore {
-        if (this.props.appStore && this.props.appStore.activeFrame) {
-            let fileId = this.props.appStore.activeFrame.frameInfo.fileId;
+        if (this.props.appStore && this.props.appStore.activeFrame && this.widgetStore.effectiveFrame) {
+            let fileId = this.widgetStore.effectiveFrame.frameInfo.fileId;
             const regionId = this.widgetStore.effectiveRegionId;
+            this.props.appStore.setRequiredFrame(this.widgetStore.effectiveFrame);
             const frameMap = this.props.appStore.spectralProfiles.get(fileId);
             if (frameMap) {
                 return frameMap.get(regionId);
@@ -58,7 +59,7 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
     }
 
     @computed get plotData(): PlotData {
-        const frame = this.props.appStore.activeFrame;
+        const frame = this.widgetStore.effectiveFrame;
         if (!frame) {
             return null;
         }
@@ -143,7 +144,7 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
 
     @computed get exportHeaders(): string[] {
         let headerString = [];
-        const frame = this.props.appStore.activeFrame;
+        const frame = this.widgetStore.effectiveFrame;
         if (frame && frame.frameInfo && frame.regionSet) {
             const regionId = this.widgetStore.effectiveRegionId;
             const region = frame.regionSet.regions.find(r => r.regionId === regionId);
@@ -211,7 +212,7 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
     };
 
     onChannelChanged = (x: number) => {
-        const frame = this.props.appStore.activeFrame;
+        const frame = this.widgetStore.effectiveFrame;
         if (this.props.appStore.animatorStore.animationState === AnimationState.PLAYING) {
             return;
         }
@@ -228,7 +229,7 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
     };
 
     private getRequiredChannelValue = (): number => {
-        const frame = this.props.appStore.activeFrame;
+        const frame = this.widgetStore.effectiveFrame;
         if (frame) {
             const channel = frame.requiredChannel;
             if (this.widgetStore.useWcsValues && frame.channelInfo &&
@@ -241,7 +242,7 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
     };
 
     private getCurrentChannelValue = (): number => {
-        const frame = this.props.appStore.activeFrame;
+        const frame = this.widgetStore.effectiveFrame;
         if (frame) {
             const channel = frame.channel;
             if (this.widgetStore.useWcsValues && frame.channelInfo &&
@@ -254,7 +255,7 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
     };
 
     private getChannelLabel = (): string => {
-        const frame = this.props.appStore.activeFrame;
+        const frame = this.widgetStore.effectiveFrame;
         if (this.widgetStore.useWcsValues && frame.channelInfo) {
             const channelInfo = frame.channelInfo;
             let channelLabel = channelInfo.channelType.name;
@@ -267,7 +268,7 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
     };
 
     private getChannelUnit = (): string => {
-        const frame = this.props.appStore.activeFrame;
+        const frame = this.widgetStore.effectiveFrame;
         if (this.widgetStore.useWcsValues && frame.channelInfo && frame.channelInfo.channelType.unit) {
             return frame.channelInfo.channelType.unit;
         }
@@ -317,7 +318,7 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
             return <NonIdealState icon={"error"} title={"Missing profile"} description={"Profile not found"}/>;
         }
 
-        const frame = appStore.activeFrame;
+        const frame = this.widgetStore.effectiveFrame;
         const imageName = (frame ? frame.frameInfo.fileInfo.name : undefined);
 
         let linePlotProps: LinePlotComponentProps = {

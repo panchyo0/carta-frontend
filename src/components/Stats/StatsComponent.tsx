@@ -43,9 +43,10 @@ export class StatsComponent extends React.Component<WidgetProps> {
     @computed get statsData(): CARTA.RegionStatsData {
         const appStore = this.props.appStore;
 
-        if (appStore.activeFrame) {
-            let fileId = appStore.activeFrame.frameInfo.fileId;
+        if (appStore.activeFrame && this.widgetStore.effectiveFrame) {
+            let fileId = this.widgetStore.effectiveFrame.frameInfo.fileId;
             let regionId = this.widgetStore.effectiveRegionId;
+            appStore.setRequiredFrame(this.widgetStore.effectiveFrame);
 
             const frameMap = appStore.regionStats.get(fileId);
             if (!frameMap) {
@@ -124,8 +125,9 @@ export class StatsComponent extends React.Component<WidgetProps> {
                 const index = this.statsData.statistics.findIndex(s => s.statsType === type);
                 if (index >= 0) {
                     let unitString = "";
-                    if (appStore.activeFrame && appStore.activeFrame.unit) {
-                        const unit = appStore.activeFrame.unit;
+                    const frame = this.widgetStore.effectiveFrame;
+                    if (frame && frame.unit) {
+                        const unit = frame.unit;
                         if (type === CARTA.StatsType.NumPixels) {
                             unitString = "pixel(s)";
                         } else if (type === CARTA.StatsType.SumSq) {
@@ -180,7 +182,9 @@ export class StatsComponent extends React.Component<WidgetProps> {
 
         return (
             <div className={className}>
-                <RegionSelectorComponent widgetStore={this.widgetStore} appStore={this.props.appStore}/>
+                <div className="stats-toolbar">
+                    <RegionSelectorComponent widgetStore={this.widgetStore} appStore={this.props.appStore}/>
+                </div>
                 <div className="stats-display">
                     {formContent}
                 </div>
