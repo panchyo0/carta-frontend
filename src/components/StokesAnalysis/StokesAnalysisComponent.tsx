@@ -100,8 +100,7 @@ export class StokesAnalysisComponent extends React.Component<WidgetProps> {
 
         autorun(() => {
             if (this.widgetStore) {
-                const appStore = this.props.appStore;
-                const frame = appStore.activeFrame;
+                const frame = this.widgetStore.effectiveFrame;
                 let progressString = "";
                 const currentData = this.plotData;
                 if (currentData && isFinite(currentData.qProgress) && isFinite(currentData.uProgress)) {

@@ -178,8 +178,7 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
         autorun(() => {
             if (this.widgetStore) {
                 const coordinate = this.widgetStore.coordinate;
-                const appStore = this.props.appStore;
-                const frame = appStore.activeFrame;
+                const frame = this.widgetStore.effectiveFrame;
                 let progressString = "";
                 const currentData = this.plotData;
                 if (currentData && isFinite(currentData.progress) && currentData.progress < 1.0) {
