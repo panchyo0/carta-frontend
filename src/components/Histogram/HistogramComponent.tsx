@@ -48,7 +48,7 @@ export class HistogramComponent extends React.Component<WidgetProps> {
     @computed get histogramData(): CARTA.IHistogram {
         const appStore = this.props.appStore;
 
-        if (appStore.activeFrame) {
+        if (appStore.activeFrame && this.widgetStore.effectiveFrame) {
             let fileId = this.widgetStore.effectiveFrame.frameInfo.fileId;
             let regionId = this.widgetStore.effectiveRegionId;
 

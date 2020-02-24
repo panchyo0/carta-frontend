@@ -3,7 +3,7 @@ import * as React from "react";
 import {FormGroup, HTMLSelect, IOptionProps} from "@blueprintjs/core";
 import {CARTA} from "carta-protobuf";
 import {AppStore, RegionStore} from "stores";
-import {RegionWidgetStore, RegionsType, RegionId} from "stores/widgets";
+import {RegionWidgetStore, RegionsType, RegionId, CURRENT_FILE_ID} from "stores/widgets";
 import "./RegionSelectorComponent.css";
 
 @observer
@@ -15,14 +15,17 @@ export class RegionSelectorComponent extends React.Component<{ widgetStore: Regi
         if (appStore.activeFrame) {
             const selectedFileId = parseInt(changeEvent.target.value);
             widgetStore.setFileId(selectedFileId);
-            widgetStore.setRegionId(selectedFileId, RegionId.ACTIVE);
+            widgetStore.setRegionId(widgetStore.effectiveFrame.frameInfo.fileId, RegionId.ACTIVE);
         }
     };
 
     private handleRegionChanged = (changeEvent: React.ChangeEvent<HTMLSelectElement>) => {
         const appStore = this.props.appStore;
+        const widgetStore = this.props.widgetStore;
         if (appStore.activeFrame) {
-            this.props.widgetStore.setRegionId(appStore.activeFrame.frameInfo.fileId, parseInt(changeEvent.target.value));
+            const fileId = widgetStore.effectiveFrame.frameInfo.fileId;
+            widgetStore.setFileId(fileId);
+            widgetStore.setRegionId(fileId, parseInt(changeEvent.target.value));
         }
     };
 
@@ -31,8 +34,8 @@ export class RegionSelectorComponent extends React.Component<{ widgetStore: Regi
         const widgetStore = this.props.widgetStore;
 
         let enableFrameselect = false;
-        let selectedFrameValue: number = -3;
-        let frameOptions: IOptionProps[] = [{value: -3, label: "Current"}];
+        let selectedFrameValue: number = CURRENT_FILE_ID;
+        let frameOptions: IOptionProps[] = [{value: CURRENT_FILE_ID, label: "Current"}];
 
         if (appStore.activeFrame) {
             frameOptions = frameOptions.concat(appStore.frameNames);

@@ -2,6 +2,8 @@ import {action, observable, computed} from "mobx";
 import {AppStore} from "../AppStore";
 import {FrameStore} from "../FrameStore";
 
+export const CURRENT_FILE_ID = -1;
+
 export enum RegionId {
     ACTIVE = -3,
     IMAGE = -1,
@@ -20,7 +22,7 @@ export class RegionWidgetStore {
 
     constructor(appStore: AppStore, type: RegionsType) {
         this.appStore = appStore;
-        this.fileId = -3;
+        this.fileId = CURRENT_FILE_ID;
         this.type = type;
         this.regionIdMap = new Map<number, number>();
     }
@@ -43,23 +45,29 @@ export class RegionWidgetStore {
 
     @computed get effectiveFrame() {
         if (this.appStore.frames && this.appStore.frames.length > 0) {
-            return this.fileId === -3 ? this.appStore.activeFrame : this.appStore.getFrame(this.fileId); 
+            return this.fileId === CURRENT_FILE_ID ? this.appStore.activeFrame : this.appStore.getFrame(this.fileId);
         }
         return null;
     }
 
+    @computed get matchActiveFrame() {
+        if ( this.fileId === CURRENT_FILE_ID || (this.appStore.activeFrame && this.appStore.activeFrame.frameInfo.fileId === this.fileId )) {
+            return true;
+        }
+        return false;
+    }
+
     @computed get effectiveRegionId() {
         if (this.appStore.activeFrame) {
-            const regionId = this.regionIdMap.get(this.appStore.activeFrame.frameInfo.fileId);
-            if (regionId === RegionId.ACTIVE || regionId === undefined) {
+            const regionId = this.regionIdMap.get(this.fileId);
+            if (regionId !== RegionId.ACTIVE && regionId !== undefined) {
+                return regionId;
+            } else {
                 const selectedRegion = this.appStore.selectedRegion;
-                if (selectedRegion) {
+                if (this.matchActiveFrame && selectedRegion) {
                     return (this.type === RegionsType.CLOSED && !selectedRegion.isClosedRegion) ? RegionId.IMAGE : selectedRegion.regionId;
-                } else {
-                    return this.type === RegionsType.CLOSED ? RegionId.IMAGE : RegionId.CURSOR;
                 }
             }
-            return regionId;
         }
         return this.type === RegionsType.CLOSED ? RegionId.IMAGE : RegionId.CURSOR;
     }
