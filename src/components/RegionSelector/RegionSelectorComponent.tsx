@@ -4,6 +4,7 @@ import {FormGroup, HTMLSelect, IOptionProps} from "@blueprintjs/core";
 import {CARTA} from "carta-protobuf";
 import {AppStore, RegionStore} from "stores";
 import {RegionWidgetStore, RegionsType, RegionId, CURRENT_FILE_ID} from "stores/widgets";
+
 import "./RegionSelectorComponent.css";
 
 @observer
@@ -54,6 +55,7 @@ export class RegionSelectorComponent extends React.Component<{ widgetStore: Regi
 
             let fiteredRegions: RegionStore[];
             let regions = widgetStore.effectiveFrame.regionSet.regions;
+
             switch (widgetStore.type) {
                 case RegionsType.CLOSED:
                     fiteredRegions = regions.filter(r => !r.isTemporary && r.isClosedRegion);
