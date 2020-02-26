@@ -76,9 +76,9 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
         }
 
         if (coordinateData && coordinateData.values && coordinateData.values.length &&
-            this.widgetStore.channelValues && this.widgetStore.channelValues.length &&
-            coordinateData.values.length === this.widgetStore.channelValues.length) {
-            const channelValues = this.widgetStore.channelValues;
+            frame.selectedChannelValues && frame.selectedChannelValues.length &&
+            coordinateData.values.length === frame.selectedChannelValues.length) {
+            const channelValues = frame.selectedChannelValues;
             let xMin = Math.min(channelValues[0], channelValues[channelValues.length - 1]);
             let xMax = Math.max(channelValues[0], channelValues[channelValues.length - 1]);
 
@@ -222,10 +222,10 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
         if (frame && frame.channelInfo) {
             let channelInfo = frame.channelInfo;
             let nearestIndex;
-            if (this.widgetStore.isCoordChannel) {
+            if (frame.selectedSpectralType === SpectralType.CHANNEL) {
                 nearestIndex = channelInfo.getChannelIndexSimple(x);
             } else {
-                if (this.widgetStore.isSpectralPropsEqual) {
+                if (frame.isSelectedSpectralPropsEqualToFrame) {
                     nearestIndex = channelInfo.getChannelIndexWCS(x);
                 } else {
                     // invert x in selected widget wcs to frame's default wcs
@@ -241,26 +241,26 @@ export class SpectralProfilerComponent extends React.Component<WidgetProps> {
 
     @computed get currentChannelValue(): number {
         const frame = this.props.appStore.activeFrame;
-        if (!frame || !this.widgetStore.channelValues) {
+        if (!frame || !frame.selectedChannelValues) {
             return null;
         }
         const channel = frame.channel;
-        if (channel < 0 || channel >= this.widgetStore.channelValues.length) {
+        if (channel < 0 || channel >= frame.selectedChannelValues.length) {
             return null;
         }
-        return this.widgetStore.isCoordChannel ? channel : this.widgetStore.channelValues[channel];
+        return this.widgetStore.isCoordChannel ? channel : frame.selectedChannelValues[channel];
     }
 
     @computed get requiredChannelValue(): number {
         const frame = this.props.appStore.activeFrame;
-        if (!frame || !this.widgetStore.channelValues) {
+        if (!frame || !frame.selectedChannelValues) {
             return null;
         }
         const channel = frame.requiredChannel;
-        if (channel < 0 || channel >= this.widgetStore.channelValues.length) {
+        if (channel < 0 || channel >= frame.selectedChannelValues.length) {
             return null;
         }
-        return this.widgetStore.isCoordChannel ? channel : this.widgetStore.channelValues[channel];
+        return this.widgetStore.isCoordChannel ? channel : frame.selectedChannelValues[channel];
     }
 
     private getChannelUnit = (): string => {

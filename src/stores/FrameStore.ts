@@ -3,7 +3,12 @@ import {NumberRange} from "@blueprintjs/core";
 import {CARTA} from "carta-protobuf";
 import * as AST from "ast_wrapper";
 import {ASTSettingsString, ContourConfigStore, ContourStore, LogStore, OverlayBeamStore, OverlayStore, PreferenceStore, RegionSetStore, RenderConfigStore} from "stores";
-import {ChannelInfo, ControlMap, CursorInfo, FrameView, Point2D, ProtobufProcessing, SpectralInfo, SpectralType, Transform2D, ZoomPoint} from "models";
+import {
+    ChannelInfo, ControlMap, CursorInfo, FrameView, GenCoordinateLabel,
+    IsSpectralTypeValid, IsSpectralUnitValid, IsSpectralSystemValid, Point2D, ProtobufProcessing,
+    SpectralInfo, SpectralType, SpectralUnit, SpectralSystem, SPECTRAL_DEFAULT_UNIT,
+    SPECTRAL_TYPE_STRING, Transform2D, ZoomPoint
+} from "models";
 import {clamp, findChannelType, frequencyStringFromVelocity, getHeaderNumericValue, getTransformedChannel, getTransformedCoordinates, minMax2D, rotate2D, toFixed, trimFitsComment, velocityStringFromFrequency} from "utilities";
 import {BackendService} from "services";
 
@@ -28,6 +33,10 @@ export class FrameStore {
     @observable wcsInfo: number;
     @observable fullWcsInfo: number;
     @observable spectralFrame: number;
+    @observable selectedSpectralType: SpectralType;
+    @observable selectedSpectralUnit: SpectralUnit;
+    @observable selectedSpectralSystem: SpectralSystem;
+    @observable selectedChannelValues:  Array<number>;
     @observable validWcs: boolean;
     @observable center: Point2D;
     @observable cursorInfo: CursorInfo;
@@ -343,6 +352,37 @@ export class FrameStore {
         return spectralInfo;
     }
 
+    @computed get selectedSpectralCoordinate(): string {
+        if (!this.isSpectralSettingsSupported || this.selectedSpectralType === SpectralType.CHANNEL) {
+            return SPECTRAL_TYPE_STRING.get(SpectralType.CHANNEL);
+        } else if (this.selectedSpectralType ===  SpectralType.WCS) {
+            const type = this.spectralInfo.channelType.code as SpectralType;
+            return GenCoordinateLabel(SPECTRAL_TYPE_STRING.get(type), SPECTRAL_DEFAULT_UNIT.get(type));
+        }
+        return GenCoordinateLabel(this.selectedSpectralType, this.selectedSpectralUnit);
+    }
+
+    @computed get isSpectralSettingsSupported(): boolean {
+        if (this.spectralInfo) {
+            const type = this.spectralInfo.channelType.code as string;
+            const unit = this.spectralInfo.channelType.unit as string;
+            const specsys = this.spectralInfo.specsys as string;
+            return type && unit && specsys && IsSpectralTypeValid(type) && IsSpectralUnitValid(unit) && IsSpectralSystemValid(specsys);
+        }
+        return false;
+    }
+
+    @computed get isSelectedSpectralPropsEqualToFrame(): boolean {
+        let result = false;
+        if (this.spectralInfo) {
+            const isTypeEqual = this.spectralInfo.channelType.code === (this.selectedSpectralType as string);
+            const isUnitEqual = this.spectralInfo.channelType.unit === (this.selectedSpectralUnit as string);
+            const isSpecsysEqual = this.spectralInfo.specsys === (this.selectedSpectralSystem as string);
+            result = isTypeEqual && isUnitEqual && isSpecsysEqual;
+        }
+        return result;
+    }
+
     @computed get hasStokes(): boolean {
         return this.frameInfo && this.frameInfo.fileInfoExtended && this.frameInfo.fileInfoExtended.stokes > 1;
     }
@@ -426,6 +466,10 @@ export class FrameStore {
         this.preference = preference;
         this.contourContext = gl;
         this.spectralFrame = null;
+        this.selectedSpectralType = null;
+        this.selectedSpectralUnit = null;
+        this.selectedSpectralSystem = null;
+        this.selectedChannelValues = null;
         this.fullWcsInfo = null;
         this.validWcs = false;
         this.frameInfo = frameInfo;
@@ -491,7 +535,29 @@ export class FrameStore {
                 this.setZoom(this.zoomLevelForFit);
             }
         });
+
+        // if type/unit/specsys changes, trigger transformation
+        autorun(() => {
+            if (this.channelInfo && this.spectralFrame && this.selectedSpectralType && this.selectedSpectralUnit && this.selectedSpectralSystem) {
+                if (this.selectedSpectralType ===  SpectralType.CHANNEL || !this.isSpectralSettingsSupported) {
+                    this.selectedChannelValues = this.channelInfo.indexes;
+                } else {
+                    this.selectedChannelValues = this.isSelectedSpectralPropsEqualToFrame ? this.channelInfo.values : this.convertSpectralValues(this.channelInfo.values);
+                }
+            }
+        });
     }
+
+    private convertSpectralValues = (x: Array<number>): Array<number> => {
+        if (!x) {
+            return null;
+        }
+        let tx: Array<number> = new Array<number>(x.length);
+        for (let i = 0; i < x.length; i++) {
+            tx[i] = AST.transformSpectralPoint(this.spectralFrame, this.selectedSpectralType, this.selectedSpectralUnit, this.selectedSpectralSystem, x[i]);
+        }
+        return tx;
+    };
 
     @action private initWCS = () => {
         let headerString = "";

@@ -12,15 +12,15 @@ export class SpectralSettingsComponent extends React.Component<{appStore: AppSto
     render() {
         const widgetStore = this.props.widgetStore;
         const spectralCoordinateOptions: IOptionProps[] = Array.from(SPECTRAL_COORDS_SUPPORTED.keys()).map((coord: string) => { return {value: coord, label: coord}; });
-
-        const disableSetting = this.props.disable || !this.props.appStore.activeFrame || !this.props.appStore.activeFrame.spectralFrame || !widgetStore.isSpectralSettingsSupported;
+        const frame = this.props.appStore.activeFrame;
+        const disableSetting = this.props.disable || !frame || !frame.spectralFrame || !frame.isSpectralSettingsSupported;
         return (
             <React.Fragment>
                 <div className="spectral-settings">
                     <FormGroup label={"Coordinate"} inline={true} disabled={disableSetting}>
                         <HTMLSelect
                             disabled={disableSetting}
-                            value={widgetStore.spectralCoordinate}
+                            value={frame.selectedSpectralCoordinate}
                             options={spectralCoordinateOptions}
                             onChange={(event: React.FormEvent<HTMLSelectElement>) => widgetStore.setSpectralCoordinate(event.currentTarget.value as string)}
                         />
@@ -28,7 +28,7 @@ export class SpectralSettingsComponent extends React.Component<{appStore: AppSto
                     <FormGroup label={"System"} inline={true} disabled={disableSetting}>
                         <HTMLSelect
                             disabled={disableSetting}
-                            value={widgetStore.spectralSystem}
+                            value={frame.selectedSpectralSystem}
                             options={Object.keys(SpectralSystem).map((key) => ({label: key, value: SpectralSystem[key]}))}
                             onChange={(event: React.FormEvent<HTMLSelectElement>) => widgetStore.setSpectralSystem(event.currentTarget.value as SpectralSystem)}
                         />
