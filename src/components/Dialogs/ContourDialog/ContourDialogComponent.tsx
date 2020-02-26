@@ -201,7 +201,7 @@ export class ContourDialogComponent extends React.Component<{ appStore: AppStore
         const frame = this.props.appStore.activeFrame;
         if (frame) {
             frame.contourConfig.setContourConfiguration(this.levels.slice(), this.smoothingMode, this.smoothingFactor);
-            frame.applyContours();
+            frame.applyContours(true);
         }
     };
 

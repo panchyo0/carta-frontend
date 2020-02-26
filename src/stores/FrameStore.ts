@@ -906,14 +906,12 @@ export class FrameStore {
         this.moving = false;
     };
 
-    @action applyContours = () => {
+    @action applyContours = (singleShot: boolean = false) => {
         if (!this.contourConfig || !this.renderConfig) {
             return;
         }
 
         this.contourConfig.setEnabled(true);
-
-        // TODO: Allow a different reference frame
         const contourParameters: CARTA.ISetContourParameters = {
             fileId: this.frameInfo.fileId,
             referenceFileId: this.frameInfo.fileId,
@@ -928,7 +926,8 @@ export class FrameStore {
             },
             decimationFactor: this.preference.contourDecimation,
             compressionLevel: this.preference.contourCompressionLevel,
-            contourChunkSize: this.preference.contourChunkSize
+            contourChunkSize: this.preference.contourChunkSize,
+            singleShot
         };
         this.backendService.setContourParameters(contourParameters);
     };
