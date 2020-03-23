@@ -188,6 +188,108 @@ const DEFAULTS = {
     }
 };
 
+/*
+interface GlobalSettings {
+    theme: Theme;
+    autoLaunch: boolean;
+    layout: string;
+    cursorPosition: CursorPosition;
+    zoomMode: Zoom;
+    zoomPoint: ZoomPoint;
+    dragPanning: boolean;
+    spectralMatchingType: SpectralType;
+    autoWCSMatching: WCSMatchingType;
+}
+
+class PreferenceGlobalSettings {
+    private readonly appStore: AppStore;
+    private settings: GlobalSettings;
+
+    private PREFERENCE_VALIDATORS = new Map<PreferenceKeys, (values: string) => any>([
+        [PreferenceKeys.GLOBAL_THEME, (value: string): string => { return value && Theme.isValid(value) ? value : DEFAULTS.GLOBAL.theme; }],
+        [PreferenceKeys.GLOBAL_AUTOLAUNCH, (value: string): boolean => { return parseBoolean(value, DEFAULTS.GLOBAL.autoLaunch); }],
+        [PreferenceKeys.GLOBAL_LAYOUT, (value: string): string => { return value && this.appStore.layoutStore.layoutExist(value) ? value : DEFAULTS.GLOBAL.layout; }],
+        [PreferenceKeys.GLOBAL_CURSOR_POSITION, (value: string): string => { return value && CursorPosition.isValid(value) ? value : DEFAULTS.GLOBAL.cursorPosition; }],
+        [PreferenceKeys.GLOBAL_ZOOM_MODE, (value: string): string => { return value && Zoom.isValid(value) ? value : DEFAULTS.GLOBAL.zoomMode; }],
+        [PreferenceKeys.GLOBAL_ZOOM_POINT, (value: string): string => { return value && ZoomPoint.isValid(value) ? value : DEFAULTS.GLOBAL.zoomPoint; }],
+        [PreferenceKeys.GLOBAL_DRAG_PANNING, (value: string): boolean => { return value === "false" ? false : DEFAULTS.GLOBAL.dragPanning; }],
+        [PreferenceKeys.GLOBAL_SPECTRAL_MATCHING_TYPE, (value: SpectralType): string => { return IsSpectralMatchingTypeValid(value) ? value : DEFAULTS.GLOBAL.spectralMatchingType; }],
+        [PreferenceKeys.GLOBAL_AUTO_WCS_MATCHING, (value: string): WCSMatchingType => { return IsWCSMatchingTypeValid(value) ? parseInt(value) : DEFAULTS.GLOBAL.autoWCSMatching; }]
+    ]);
+
+    constructor(appStore: AppStore) {
+        this.appStore = appStore;
+        this.settings = Object.assign(DEFAULTS.GLOBAL);
+    }
+
+    // getters
+    @computed get theme(): Theme {
+        return this.settings.theme;
+    }
+    @computed get autoLaunch(): boolean {
+        return this.settings.autoLaunch;
+    }
+    @computed get layout(): string {
+        return this.settings.layout;
+    }
+    @computed get cursorPosition(): CursorPosition {
+        return this.settings.cursorPosition;
+    }
+    @computed get zoomMode(): Zoom {
+        return this.settings.zoomMode;
+    }
+    @computed get zoomPoint(): ZoomPoint {
+        return this.settings.zoomPoint;
+    }
+    @computed get dragPanning(): boolean {
+        return this.settings.dragPanning;
+    }
+    @computed get spectralMatchingType(): SpectralType {
+        return this.settings.spectralMatchingType;
+    }
+    @computed get autoWCSMatching(): WCSMatchingType {
+        return this.settings.autoWCSMatching;
+    }
+
+    // setters
+    public setTheme = (theme: Theme) => {
+        this.setGlobalSettings(PreferenceKeys.GLOBAL_THEME, theme);
+    };
+
+    @action setGlobalSettings = (key: PreferenceKeys, value: any): void => {
+        if (key === null || value === null || !this.preferences.has(key)) {
+            return;
+        }
+
+        // save prefernce to local storage/server db
+        const keyStr: string = KEY_TO_STRING.get(key);
+        if (!keyStr) {
+            return;
+        }
+        let valueStr: string;
+        switch (typeof value) {
+            case "boolean":
+                valueStr = value ? "true" : "false";
+                break;
+            case "number":
+                valueStr = value.toString(10);
+                break;
+            case "string":
+                valueStr = value;
+                break;
+            default:
+                return;
+        }
+
+        if (this.supportsServer) {
+            this.savePreferencesToServer(keyStr, valueStr);
+        } else {
+            localStorage.setItem(keyStr, valueStr);
+        }
+    };
+}
+*/
+
 export class PreferenceStore {
     private readonly appStore: AppStore;
 
