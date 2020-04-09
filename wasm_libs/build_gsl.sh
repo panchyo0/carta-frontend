@@ -10,6 +10,7 @@ mkdir -p gsl; tar -xf gsl-2.6.tar.gz --directory ./gsl --strip-components=1
 
 cd gsl
 echo "Building GSL using Emscripten"
+./autogen.sh
 CFLAGS="-g0 -O3 -s WASM=1" emconfigure ./configure
 emmake make -j4
 echo "Checking for GSL static lib..."
