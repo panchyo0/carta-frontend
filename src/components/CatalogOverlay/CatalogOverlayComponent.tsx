@@ -1,7 +1,7 @@
 import * as React from "react";
 import {action, autorun, computed, observable} from "mobx";
 import {observer} from "mobx-react";
-import {AnchorButton, FormGroup, Intent, HTMLSelect, NonIdealState, Switch, Tooltip, MenuItem, PopoverPosition, Button} from "@blueprintjs/core";
+import {AnchorButton, FormGroup, Intent, HTMLSelect, NonIdealState, Switch, Tooltip, MenuItem, PopoverPosition, Button, Toaster, Position, NumericInput} from "@blueprintjs/core";
 import {Cell, Column, Regions, RenderMode, SelectionModes, Table} from "@blueprintjs/table";
 import {Select, IItemRendererProps} from "@blueprintjs/select";
 import ReactResizeDetector from "react-resize-detector";
@@ -52,13 +52,15 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
         [CARTA.EntryType.UNKNOWN_TYPE, [CatalogOverlay.NONE]]
     ]);
 
+    private cutoutRadius: number = 10;
+    
     public static get WIDGET_CONFIG(): WidgetConfig {
         return {
             id: "catalog-overlay",
             type: "catalog-overlay",
             minWidth: 320,
             minHeight: 400,
-            defaultWidth: 600,
+            defaultWidth: 750,
             defaultHeight: 350,
             title: "Catalog Overlay",
             isCloseable: true,
@@ -557,6 +559,32 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
         );
     }
 
+    private showViewImageToast = () => {
+        let filename = "VLASS1.2.ql.T09t22.J141001-043000.10.2048.v1.I.iter1.image.pbcor.tt0.subim.fits";
+        const index = this.widgetStore.selectedPointIndexs[0];
+        const data = this.widgetStore.get1DPlotData("Filename").wcsData;
+        if (data.length) {
+            filename = data[index];
+        }
+        const toaster = Toaster.create({
+            className: "recipe-toaster",
+            position: Position.TOP,
+        });
+        toaster.show({ message: "Not implemented yet. We will load " + filename + " into the image viewer." });
+    }
+
+    private showCutoutToast = () => {
+        const toaster = Toaster.create({
+            className: "recipe-toaster",
+            position: Position.TOP,
+        });
+        toaster.show({ message: "Not implemented yet. We will download the cutout with radius " + this.cutoutRadius.toString() + "." });
+    }
+
+    private handleCutoutRadiusChange = (radius: number) => {
+        this.cutoutRadius = radius;
+    }
+
     public render() {
         const appStore = AppStore.Instance;
         const widgetStore = this.widgetStore;
@@ -641,7 +669,36 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
                             </tbody>
                         </table>
                     </div>
-                    <div className="bp3-dialog-footer-actions">
+                    <div className="bp3-dialog-footer-actions">  
+
+                        <Tooltip content={"Load iamge file"}>
+                        <AnchorButton
+                            intent={Intent.PRIMARY}
+                            text="View SubTile"
+                            onClick={this.showViewImageToast}
+                            disabled={widgetStore.selectedPointIndexs.length !== 1}
+                        />
+                        </Tooltip>
+                        <Tooltip content={"Download Cutout"}>
+                        <AnchorButton
+                            intent={Intent.PRIMARY}
+                            text="Download Cutout"
+                            onClick={this.showCutoutToast}
+                            disabled={widgetStore.selectedPointIndexs.length !== 1}
+                        />
+                        </Tooltip>
+                        <NumericInput
+                            placeholder="Radius"
+                            min={0}
+                            max={10000}
+                            value={this.cutoutRadius}
+                            stepSize={1}
+                            onValueChange={(value: number) => this.handleCutoutRadiusChange(value)}
+                            buttonPosition={"none"}
+                            style={{width: "60px"}}
+                            disabled={widgetStore.selectedPointIndexs.length !== 1}
+                        />
+
                         <Tooltip content={"Apply filter"}>
                         <AnchorButton
                             intent={Intent.PRIMARY}

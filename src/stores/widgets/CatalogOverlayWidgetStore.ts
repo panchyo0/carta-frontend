@@ -365,6 +365,9 @@ export class CatalogOverlayWidgetStore extends RegionWidgetStore {
                 if (index < CatalogOverlayWidgetStore.initDisplayedColumnSize) {
                     display = true;
                 }
+                if (header.name.includes("Filename")) {
+                    display = true;
+                }
                 let controlHeader: ControlHeader = {columnIndex: header.columnIndex, dataIndex: index, display: display, representAs: CatalogOverlay.NONE, filter: undefined, columnWidth: null};
                 controlHeaders.set(header.name, controlHeader);
             }
@@ -587,9 +590,13 @@ export class CatalogOverlayWidgetStore extends RegionWidgetStore {
     public get1DPlotData(column: string): {wcsData: Array<any>, headerInfo: CARTA.ICatalogHeader} {
         const controlHeader = this.catalogControlHeader;
         const header = controlHeader.get(column);
-        const headerInfo = this.catalogHeader[header.dataIndex];
-        const wcsData = getTableDataByType(this.catalogData, headerInfo.dataType, headerInfo.dataTypeIndex);
-        return {wcsData: wcsData, headerInfo: headerInfo};
+        if (header && header.dataIndex) {
+            const headerInfo = this.catalogHeader[header.dataIndex];
+            const wcsData = getTableDataByType(this.catalogData, headerInfo.dataType, headerInfo.dataTypeIndex);
+            return {wcsData: wcsData, headerInfo: headerInfo};
+        } else {
+            return {wcsData: [], headerInfo: null};
+        }
     }
 
     private filterBySelectedDataIndexs(selectedPointIndexs: Array<number>, dataArray: any) {
