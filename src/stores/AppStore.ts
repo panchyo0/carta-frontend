@@ -130,7 +130,7 @@ export class AppStore {
     };
 
     @action connectToServer = (socketName: string = "socket") => {
-        let wsURL = `${location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}/${socketName}`;
+        let wsURL = `${location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}:8001/${socketName}`;
         if (process.env.NODE_ENV === "development") {
             wsURL = process.env.REACT_APP_DEFAULT_ADDRESS ? process.env.REACT_APP_DEFAULT_ADDRESS : wsURL;
         } else {

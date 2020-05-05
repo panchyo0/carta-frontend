@@ -578,7 +578,7 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
             className: "recipe-toaster",
             position: Position.TOP,
         });
-        toaster.show({ message: "Not implemented yet. We will download the cutout with radius " + this.cutoutRadius.toString() + "." });
+        toaster.show({ message: "Not implemented yet. We will perform a cutout of radius X on-the-fly, and download it to the user." });
     }
 
     private handleCutoutRadiusChange = (radius: number) => {
