@@ -3,7 +3,8 @@ import * as Plotly from "plotly.js";
 import {observer} from "mobx-react";
 import {computed} from "mobx";
 import Plot from "react-plotly.js";
-import {AppStore, CatalogStore, OverlayStore, FrameStore} from "stores";
+import {Colors} from "@blueprintjs/core";
+import {AppStore, CatalogStore} from "stores";
 import {canvasToTransformedImagePos} from "components/ImageView/RegionView/shared";
 import {ImageViewLayer} from "../ImageViewComponent";
 import {CursorInfo} from "models";
@@ -27,51 +28,70 @@ export class CatalogViewComponent extends React.Component<CatalogViewComponentPr
 
         catalogStore.catalogs.forEach((catalog, key) => {
             const selectedPointIndexs = catalog.selectedPointIndexs;
-            let data: Plotly.Data = {};
-
-            data.type = "scattergl";
-            data.mode = "markers";
-            data.hoverinfo = "none";
-            data.marker = {
-                symbol: catalog.shape, 
-                color: catalog.color,
-                size: catalog.size,
-                line: {
-                    width: 1.5
-                }
-            };
+            const selectedPointSize = selectedPointIndexs.length;
+            let selectedata: Plotly.Data = {};
+            let unSelectedata: Plotly.Data = {};
 
             let totalLength = 0;
             for (let i = 0; i < catalog.xImageCoords.length; i++) {
                 totalLength += catalog.xImageCoords[i].length;
             }
 
-            const xArray = new Float64Array(totalLength);
-            const yArray = new Float64Array(totalLength);
+            const xArray = new Array(totalLength);
+            const yArray = new Array(totalLength);
 
             let offset = 0;
             for (let i = 0; i < catalog.xImageCoords.length; i++) {
-                xArray.set(catalog.xImageCoords[i], offset);
-                yArray.set(catalog.yImageCoords[i], offset);
+                for (let j = 0; j < catalog.xImageCoords[i].length; j++) {
+                    xArray[j + offset] = catalog.xImageCoords[i][j];
+                    yArray[j + offset] = catalog.yImageCoords[i][j];
+                }
                 offset += catalog.xImageCoords[i].length;
             }
 
-            data.x = xArray;
-            data.y = yArray;
-            data.name = key;
-            if (selectedPointIndexs.length > 0) {
-                data["selectedpoints"] = selectedPointIndexs;
-                let opacity = 0.2;
-                if (catalog.showSelectedData) {
-                    opacity = 0;
+            unSelectedata.type = "scattergl";
+            unSelectedata.mode = "markers";
+            unSelectedata.hoverinfo = "none";
+            unSelectedata.marker = {
+                symbol: catalog.shape,
+                color: catalog.color,
+                size: catalog.size * devicePixelRatio,
+                line: {
+                    width: 2,
+                    color: catalog.color
                 }
-                data["unselected"] = {"marker": {"opacity": opacity}};
-            } else {
-                data["selectedpoints"] = [];
-                data["unselected"] = {"marker": {"opacity": 1}};
-            }
+            };
+            unSelectedata.x = xArray;
+            unSelectedata.y = yArray;
+            unSelectedata.name = key;
+            scatterDatasets.push(unSelectedata);
 
-            scatterDatasets.push(data);
+            if (selectedPointSize > 0) {
+                selectedata.type = "scattergl";
+                selectedata.mode = "markers";
+                selectedata.hoverinfo = "none";
+                selectedata.marker = {
+                    symbol: catalog.shape,
+                    color: Colors.RED2,
+                    size: catalog.size * devicePixelRatio + 5,
+                    line: {
+                        width: 2,
+                        color: Colors.RED2
+                    }
+                };
+                let selectedX = new Array(selectedPointSize);
+                let selectedY = new Array(selectedPointSize);
+                for (let index = 0; index < selectedPointSize; index++) {
+                    const pointIndex = selectedPointIndexs[index];
+                    selectedX.push(xArray[pointIndex]);
+                    selectedY.push(yArray[pointIndex]);
+                }
+                selectedata.x = selectedX;
+                selectedata.y = selectedY;
+            }
+            if (selectedata.x && selectedata.x.length) {
+                scatterDatasets.push(selectedata);
+            }
         });
         return scatterDatasets;
     }
@@ -89,7 +109,7 @@ export class CatalogViewComponent extends React.Component<CatalogViewComponentPr
                 appStore.catalogStore.updateSelectedPoints(catalogWidgetId, selectedPointIndex);
             }
         }
-    }
+    };
 
     private onWheelCaptured = (event: React.WheelEvent<HTMLDivElement>) => {
         if (event && event.nativeEvent && event.nativeEvent.type === "wheel") {
@@ -102,13 +122,13 @@ export class CatalogViewComponent extends React.Component<CatalogViewComponentPr
                 this.props.onZoomed(frame.getCursorInfo(cursorPosImageSpace), -delta);
             }
         }
-    }
+    };
 
     render() {
         const appStore = AppStore.Instance;
         const frame = appStore.activeFrame;
-        const width = frame ? frame.renderWidth || 1 : 1;
-        const height = frame ? frame.renderHeight || 1 : 1;
+        const width = this.props.width;
+        const height = this.props.height;
         const padding = appStore.overlayStore.padding;
         let className = "catalog-div";
         if (this.props.docked) {
@@ -116,7 +136,7 @@ export class CatalogViewComponent extends React.Component<CatalogViewComponentPr
         }
 
         let layout: Partial<Plotly.Layout> = {
-            width: width, 
+            width: width,
             height: height,
             hovermode: "closest",
             xaxis: {
@@ -124,14 +144,14 @@ export class CatalogViewComponent extends React.Component<CatalogViewComponentPr
                 showgrid: false,
                 zeroline: false,
                 showline: false,
-                showticklabels: false
+                showticklabels: false,
             },
             yaxis: {
                 autorange: false,
                 showgrid: false,
                 zeroline: false,
                 showline: false,
-                showticklabels: false
+                showticklabels: false,
             },
             margin: {
                 l: 0,
@@ -150,13 +170,15 @@ export class CatalogViewComponent extends React.Component<CatalogViewComponentPr
             displaylogo: false,
             scrollZoom: false,
             showAxisDragHandles: false,
-            setBackground: () => { return "transparent"; },
+            setBackground: () => {
+                return "transparent";
+            },
         };
 
         if (frame) {
             const border = frame.requiredFrameView;
-            layout.xaxis.range =  [border.xMin, border.xMax];
-            layout.yaxis.range =  [border.yMin, border.yMax];
+            layout.xaxis.range = [border.xMin, border.xMax];
+            layout.yaxis.range = [border.yMin, border.yMax];
         }
 
         return (

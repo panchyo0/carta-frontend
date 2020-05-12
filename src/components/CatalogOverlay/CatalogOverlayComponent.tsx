@@ -1,8 +1,9 @@
 import * as React from "react";
 import {action, autorun, computed, observable} from "mobx";
 import {observer} from "mobx-react";
-import {AnchorButton, FormGroup, HTMLSelect, Intent, NonIdealState, Switch, Tooltip} from "@blueprintjs/core";
+import {AnchorButton, FormGroup, Intent, HTMLSelect, NonIdealState, Switch, Tooltip, MenuItem, PopoverPosition, Button} from "@blueprintjs/core";
 import {Cell, Column, Regions, RenderMode, SelectionModes, Table} from "@blueprintjs/table";
+import {Select, IItemRendererProps} from "@blueprintjs/select";
 import ReactResizeDetector from "react-resize-detector";
 import {CARTA} from "carta-protobuf";
 import {TableComponent, TableComponentProps, TableType} from "components/Shared";
@@ -99,8 +100,8 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
         return widgetId;
     }
 
-    @action handleCatalogFileChange(changeEvent: React.ChangeEvent<HTMLSelectElement>) {
-        this.catalogFileId = Number(changeEvent.currentTarget.value);
+    @action handleCatalogFileChange = (fileId: number) => {
+        this.catalogFileId = fileId;
         this.widgetId = this.matchesSelectedCatalogFile;
     }
 
@@ -202,7 +203,7 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
                 key={columnName} 
                 name={columnName} 
                 cellRenderer={(rowIndex, columnIndex) => (
-                    <Cell key={`cell_${columnIndex}_${rowIndex}`} interactive={true}>{coloumnData[rowIndex]}</Cell>
+                    <Cell className="header-table-cell" key={`cell_${columnIndex}_${rowIndex}`} interactive={true}>{coloumnData[rowIndex]}</Cell>
             )}
             />
         );
@@ -216,9 +217,9 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
             disable = false;
         }
         return (
-            <Cell key={`cell_switch_${rowIndex}`}>
+            <Cell className="header-table-cell" key={`cell_switch_${rowIndex}`}>
                 <React.Fragment>
-                    <Switch className="display-switch" key={`cell_switch_button_${rowIndex}`} disabled={disable} checked={display} onChange={changeEvent => this.handleHeaderDisplayChange(changeEvent, columnName)}/>
+                    <Switch className="cell-switch-button" key={`cell_switch_button_${rowIndex}`} disabled={disable} checked={display} onChange={changeEvent => this.handleHeaderDisplayChange(changeEvent, columnName)}/>
                 </React.Fragment>
             </Cell>
         );
@@ -232,9 +233,9 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
         const disabled = !controlHeader.display;
 
         return (
-            <Cell key={`cell_drop_down_${rowIndex}`}>
+            <Cell className="cell-dropdown-menu" key={`cell_drop_down_${rowIndex}`}>
                 <React.Fragment>
-                    <HTMLSelect className="bp3-minimal bp3-fill " value={controlHeader.representAs} disabled={disabled} onChange={changeEvent => this.handleHeaderRepresentationChange(changeEvent, columnName)}>
+                    <HTMLSelect className="bp3-minimal bp3-fill" value={controlHeader.representAs} disabled={disabled} onChange={changeEvent => this.handleHeaderRepresentationChange(changeEvent, columnName)}>
                         {supportedRepresentations.map( representation => {                           
                             if (representation === CatalogOverlay.X) {
                                 return (<option key={representation} value={representation}>{this.coordinate.x}</option>);
@@ -292,13 +293,14 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
                 enableRowReordering={false}
                 renderMode={RenderMode.BATCH} 
                 selectionModes={SelectionModes.NONE} 
-                defaultRowHeight={35}
+                defaultRowHeight={30}
                 minRowHeight={20}
                 minColumnWidth={30}
                 enableGhostCells={true}
                 numFrozenColumns={1}
                 columnWidths={this.widgetStore.headerTableColumnWidts}
                 onColumnWidthChanged={this.updateHeaderTableColumnSize}
+                enableRowResizing={false}
             >
                 {tableColumns}
             </Table>
@@ -516,9 +518,8 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
         }
     }
 
-    private handlePlotTypeChange(changeEvent: React.ChangeEvent<HTMLSelectElement>) {
-        const val = changeEvent.currentTarget.value as CatalogPlotType;
-        this.widgetStore.setCatalogPlotType(val);
+    private handlePlotTypeChange = (plotType: CatalogPlotType) => {
+        this.widgetStore.setCatalogPlotType(plotType);
     }
 
     // single source selected in table
@@ -533,6 +534,28 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
         }
         widgetsStore.setselectedPointIndexs(selectedData);
         CatalogStore.Instance.updateSelectedPoints(this.widgetId, selectedData);
+    }
+
+    private renderFileIdPopOver = (fileId: number, itemProps: IItemRendererProps) => {
+        return (
+            <MenuItem
+                key={fileId}
+                text={fileId}
+                onClick={itemProps.handleClick}
+                active={itemProps.modifiers.active}
+            />
+        );
+    }
+
+    private renderPlotTypePopOver = (plotType: CatalogPlotType, itemProps: IItemRendererProps) => {
+        return (
+            <MenuItem
+                key={plotType}
+                text={plotType}
+                onClick={itemProps.handleClick}
+                active={itemProps.modifiers.active}
+            />
+        );
     }
 
     public render() {
@@ -582,18 +605,26 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
             </tr>
         ) : null;
 
-        let catalogFile = [];
+        let catalogFiles = [];
         appStore.catalogs.forEach((value, key) => {
-            catalogFile.push(<option key={key} value={value}>{value}</option>);
+            catalogFiles.push(value);
         }); 
 
         return (
             <div className={"catalog-overlay"}>
                 <div className={"catalog-overlay-filter-settings"}>
                     <FormGroup  inline={true} label="File">
-                        <HTMLSelect className="bp3-fill" value={this.catalogFileId} onChange={changeEvent => this.handleCatalogFileChange(changeEvent)}>
-                            {catalogFile}
-                        </HTMLSelect>
+                        <Select 
+                            className="bp3-fill"
+                            filterable={false}
+                            items={catalogFiles} 
+                            activeItem={this.catalogFileId}
+                            onItemSelect={this.handleCatalogFileChange}
+                            itemRenderer={this.renderFileIdPopOver}
+                            popoverProps={{popoverClassName: "catalog-select", minimal: true , position: PopoverPosition.AUTO_END}}
+                        >
+                            <Button text={this.catalogFileId} rightIcon="double-caret-vertical"/>
+                        </Select>
                     </FormGroup>
                     <CatalogOverlayPlotSettingsComponent widgetStore={this.widgetStore} id={this.widgetId}/>
                 </div>
@@ -644,11 +675,16 @@ export class CatalogOverlayComponent extends React.Component<WidgetProps> {
                             disabled={!widgetStore.enableLoadButton}
                         />
                         </Tooltip>
-                        <HTMLSelect className="bp3-minimal" value={widgetStore.catalogPlotType} onChange={changeEvent => this.handlePlotTypeChange(changeEvent)}>
-                            {Object.keys(CatalogPlotType).map(plotType => {                           
-                                return <option key={plotType} value={CatalogPlotType[plotType]}>{CatalogPlotType[plotType]}</option>;
-                            })}
-                        </HTMLSelect>
+                        <Select 
+                            filterable={false}
+                            items={Object.values(CatalogPlotType)} 
+                            activeItem={widgetStore.catalogPlotType}
+                            onItemSelect={this.handlePlotTypeChange}
+                            itemRenderer={this.renderPlotTypePopOver}
+                            popoverProps={{popoverClassName: "catalog-select", minimal: true , position: PopoverPosition.AUTO_END}}
+                        >
+                            <Button className="bp3-minimal" text={widgetStore.catalogPlotType} rightIcon="double-caret-vertical"/>
+                        </Select>
                     </div>
                 </div>
                 <ReactResizeDetector handleWidth handleHeight onResize={this.onResize} refreshMode={"throttle"} refreshRate={33}/>
